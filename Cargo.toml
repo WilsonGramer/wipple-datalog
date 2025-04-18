@@ -1,0 +1,11 @@
+[workspace]
+members = [".", "macros", "test"]
+
+[package]
+name = "wipple-datalog"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+colored = "3"
+wipple-datalog-macros = { path = "./macros" }
