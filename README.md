@@ -75,3 +75,8 @@ The API is implemented using procedural macros and is fully type-safe — you ca
 Under the hood, the `rules!` macro expands to a `Plan` for each rule. Each `Step` in the plan contains an input variable and an output variable, which in practice means that each query in your rule has one known variable and one unknown variable. If you try to create a plan that doesn't follow this model, you'll get a compile-time error.
 
 The library currently uses [naïve evaluation](https://en.wikipedia.org/wiki/Datalog#Na%C3%AFve_evaluation), which means it keeps evaluating every rule on every fact until no more facts are generated. If performance becomes a concern, I will look into better evaluation methods!
+
+## Resources
+
+-   [Datalog in Javascript by Stepan Parunashvili](https://www.instantdb.com/essays/datalogjs)
+-   [Codebase as Database: Turning the IDE Inside Out with Datalog by Pete Vilter](https://petevilter.me/post/datalog-typechecking)
