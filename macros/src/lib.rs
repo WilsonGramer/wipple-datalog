@@ -33,15 +33,15 @@ pub fn query(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     query::query_macro(input)
 }
 
-struct Pattern<Left, Right> {
+struct Pattern<T> {
     name: Path,
     _paren_token: token::Paren,
-    left: Left,
+    left: T,
     _comma_token: Token![,],
-    right: Right,
+    right: T,
 }
 
-impl<Left: Parse, Right: Parse> Parse for Pattern<Left, Right> {
+impl<T: Parse> Parse for Pattern<T> {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let content;
         Ok(Pattern {
@@ -54,7 +54,7 @@ impl<Left: Parse, Right: Parse> Parse for Pattern<Left, Right> {
     }
 }
 
-impl<Left, Right> Pattern<Left, Right> {
+impl<T> Pattern<T> {
     fn span(&self) -> Span {
         self.name.span()
     }

@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::Parse;
 
-struct Input(Pattern<ExprOrPlaceholder, ExprOrPlaceholder>);
+struct Input(Pattern<ExprOrPlaceholder>);
 
 impl Parse for Input {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {

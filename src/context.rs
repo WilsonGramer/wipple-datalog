@@ -1,4 +1,4 @@
-use crate::{BuildQuery, Erased, Fact, Query, Rule, Rules, Trace};
+use crate::{BuildQuery, Erased, Fact, Query, Rule, Rules, Trace, Var};
 use std::{
     any::TypeId,
     collections::BTreeMap,
@@ -183,13 +183,9 @@ impl Context {
 
             let last = &rule.plan.last;
 
-            let left = vars[last.left.index].as_ref().expect("unknown var").clone();
-
-            let right = last
-                .right
-                .as_ref()
-                .unwrap_or_else(|right| vars[right.index].as_ref().expect("unknown var"))
-                .clone();
+            let get_var = |var: &Var<_>| vars[var.index].as_ref().expect("unknown var").clone();
+            let left = get_var(&last.left);
+            let right = get_var(&last.right);
 
             new_facts.push(Fact {
                 fact_key: last.fact_key,

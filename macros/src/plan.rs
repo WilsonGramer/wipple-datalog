@@ -1,12 +1,12 @@
 use crate::Pattern;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Expr, Ident, Path, Token, parse::Parse, punctuated::Punctuated, spanned::Spanned};
+use syn::{Ident, Path, Token, parse::Parse, punctuated::Punctuated};
 
 pub struct Input {
-    query: Pattern<Ident, Expr>,
+    query: Pattern<Ident>,
     _if_token: Token![if],
-    dependencies: Punctuated<Pattern<Ident, Expr>, Token![,]>,
+    dependencies: Punctuated<Pattern<Ident>, Token![,]>,
 }
 
 impl Parse for Input {
@@ -38,7 +38,7 @@ struct Plan {
     vars: Vec<PlanVar>,
     first: PlanFirstStep,
     steps: Vec<PlanStep>,
-    last: PlanLastStep,
+    last: PlanStep,
 }
 
 struct PlanVar {
@@ -48,7 +48,6 @@ struct PlanVar {
 
 type PlanFirstStep = Step<()>;
 type PlanStep = Step<Ident>;
-type PlanLastStep = Step<Result<Expr, Ident>>;
 
 struct Step<Right> {
     query: Path,
@@ -67,26 +66,8 @@ impl PlanFirstStep {
 }
 
 impl PlanStep {
-    fn plan(query: Path, left: Ident, right: Ident) -> Self {
+    fn new(query: Path, left: Ident, right: Ident) -> Self {
         Step { query, left, right }
-    }
-}
-
-impl PlanLastStep {
-    fn last_var(query: Path, left: Ident, right: Ident) -> Self {
-        Step {
-            query,
-            left,
-            right: Err(right),
-        }
-    }
-
-    fn last_val(query: Path, left: Ident, right: Expr) -> Self {
-        Step {
-            query,
-            left,
-            right: Ok(right),
-        }
     }
 }
 
@@ -140,24 +121,8 @@ impl ToTokens for PlanStep {
         let right = &self.right;
 
         tokens.extend(quote! {
-            ::wipple_datalog::Step::plan::<#query>(#left, #right)
+            ::wipple_datalog::Step::new::<#query>(#left, #right)
         });
-    }
-}
-
-impl ToTokens for PlanLastStep {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let query = &self.query;
-        let left = &self.left;
-
-        match &self.right {
-            Ok(expr) => tokens.extend(quote! {
-                ::wipple_datalog::Step::last_val::<#query>(#left, #expr)
-            }),
-            Err(var) => tokens.extend(quote! {
-                ::wipple_datalog::Step::last_var::<#query>(#left, #var)
-            }),
-        }
     }
 }
 
@@ -180,14 +145,9 @@ impl Index {
 }
 
 fn make_plan<'a>(
-    query: &'a Pattern<Ident, Expr>,
-    dependencies: impl IntoIterator<Item = &'a Pattern<Ident, Expr>>,
+    query: &'a Pattern<Ident>,
+    dependencies: impl IntoIterator<Item = &'a Pattern<Ident>>,
 ) -> syn::Result<Plan> {
-    enum VarOrExpr {
-        Var(Ident),
-        Expr(Expr),
-    }
-
     let span = query.span();
 
     let mut var_index = Index::default();
@@ -199,14 +159,11 @@ fn make_plan<'a>(
     let get_vars = |span, left, right, known: &[_], var_index: &mut Index| {
         let left_known = known.contains(&var_index.get(left));
 
-        let right_known = match &right {
-            VarOrExpr::Var(var) => known.contains(&var_index.get(var)).then_some(var),
-            VarOrExpr::Expr(_) => None,
-        };
+        let right_known = known.contains(&var_index.get(right)).then_some(right);
 
         let (known_var, unknown_var) = match (left_known, right_known) {
-            (true, _) => (left.clone(), right),
-            (false, Some(right)) => (right.clone(), VarOrExpr::Var(left.clone())),
+            (true, _) => (left, right),
+            (false, Some(right)) => (right, left),
             (false, None) => {
                 return Err(syn::Error::new(
                     span,
@@ -216,16 +173,6 @@ fn make_plan<'a>(
         };
 
         Ok((known_var, unknown_var))
-    };
-
-    let expr = |e: &Expr| {
-        if let Expr::Path(path) = e {
-            if let Some(ident) = path.path.get_ident() {
-                return VarOrExpr::Var(ident.clone());
-            }
-        }
-
-        VarOrExpr::Expr(e.clone())
     };
 
     for dependency in dependencies.into_iter() {
@@ -239,49 +186,32 @@ fn make_plan<'a>(
         let (known_var, unknown_var) = get_vars(
             dependency.span(),
             &dependency.left,
-            expr(&dependency.right),
+            &dependency.right,
             &mut known,
             &mut var_index,
         )?;
 
-        let unknown_var = match unknown_var {
-            VarOrExpr::Var(var) => var,
-            VarOrExpr::Expr(expr) => {
-                return Err(syn::Error::new(expr.span(), "expected var"));
-            }
-        };
-
         // Link the known and unknown vars as the next step
-        steps.push(Step::plan(
+        steps.push(Step::new(
             dependency.name.clone(),
-            known_var,
+            known_var.clone(),
             unknown_var.clone(),
         ));
 
         // After resolving this step, the var will be known
-        known.push(var_index.get(&unknown_var));
+        known.push(var_index.get(unknown_var));
     }
 
     let Some(first) = first else {
         return Err(syn::Error::new(query.span(), "no vars in rule"));
     };
 
-    let last = match expr(&query.right) {
-        VarOrExpr::Var(var) => {
-            // Register this var if it's not already
-            var_index.get(&var);
+    // Register the last var if it's not already
+    var_index.get(&query.right);
 
-            Step::last_var(query.name.clone(), query.left.clone(), var)
-        }
-        VarOrExpr::Expr(expr) => Step::last_val(query.name.clone(), query.left.clone(), expr),
-    };
+    let last = Step::new(query.name.clone(), query.left.clone(), query.right.clone());
 
     // Now all the vars will be known and we can use the fact
-
-    for var in 0..var_index.0.len() {
-        if !known.contains(&var) {}
-    }
-
     let unknown = (0..var_index.0.len())
         .filter(|var| !known.contains(var))
         .collect::<Vec<_>>();

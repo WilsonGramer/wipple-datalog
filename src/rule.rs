@@ -105,12 +105,11 @@ pub struct Plan {
     pub vars: usize,
     pub first: PlanFirstStep,
     pub steps: &'static [PlanStep],
-    pub last: PlanLastStep<Val<Erased>>,
+    pub last: PlanStep,
 }
 
 type PlanFirstStep = Step<PhantomData<Erased>>;
 type PlanStep = Step<Var<Erased>>;
-type PlanLastStep<Output> = Step<Result<Output, Var<Erased>>>;
 
 #[derive(Debug, Clone)]
 pub struct Step<Right> {
@@ -132,35 +131,12 @@ impl PlanFirstStep {
 }
 
 impl PlanStep {
-    pub const fn plan<F: BuildQuery>(left: Var<F::Left>, right: Var<F::Right>) -> Self {
+    pub const fn new<F: BuildQuery>(left: Var<F::Left>, right: Var<F::Right>) -> Self {
         Step {
             fact_key: TypeKey::of::<F>(),
             fact_name: F::NAME,
             left: left.erase(),
             right: right.erase(),
-        }
-    }
-}
-
-impl<Output> PlanLastStep<Output> {
-    pub const fn last_var<F: BuildQuery>(left: Var<F::Left>, right: Var<F::Right>) -> Self {
-        Step {
-            fact_key: TypeKey::of::<F>(),
-            fact_name: F::NAME,
-            left: left.erase(),
-            right: Err(right.erase()),
-        }
-    }
-
-    pub const fn last_val<F: BuildQuery<Right = Output>>(
-        left: Var<F::Left>,
-        right: F::Right,
-    ) -> Self {
-        Step {
-            fact_key: TypeKey::of::<F>(),
-            fact_name: F::NAME,
-            left: left.erase(),
-            right: Ok(right),
         }
     }
 }
