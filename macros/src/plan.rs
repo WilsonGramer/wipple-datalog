@@ -81,7 +81,7 @@ impl PlanLastStep {
         }
     }
 
-    fn last_expr(query: Path, left: Ident, right: Expr) -> Self {
+    fn last_val(query: Path, left: Ident, right: Expr) -> Self {
         Step {
             query,
             left,
@@ -152,7 +152,7 @@ impl ToTokens for PlanLastStep {
 
         match &self.right {
             Ok(expr) => tokens.extend(quote! {
-                ::wipple_datalog::Step::last_expr::<#query>(#left, #expr)
+                ::wipple_datalog::Step::last_val::<#query>(#left, #expr)
             }),
             Err(var) => tokens.extend(quote! {
                 ::wipple_datalog::Step::last_var::<#query>(#left, #var)
@@ -273,7 +273,7 @@ fn make_plan<'a>(
 
             Step::last_var(query.name.clone(), query.left.clone(), var)
         }
-        VarOrExpr::Expr(expr) => Step::last_expr(query.name.clone(), query.left.clone(), expr),
+        VarOrExpr::Expr(expr) => Step::last_val(query.name.clone(), query.left.clone(), expr),
     };
 
     // Now all the vars will be known and we can use the fact
