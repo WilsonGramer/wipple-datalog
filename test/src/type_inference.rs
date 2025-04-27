@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use wipple_datalog::{Context, Fact, fact, rules, val};
+use wipple_datalog::{Context, Fact, Val, fact, rules};
 
 struct Expr;
 
@@ -67,12 +67,12 @@ rules! {
 fn test_type_inference() {
     let mut ctx = Context::new();
 
-    let function = val::<Expr>("function");
-    let parameter = val::<Expr>("parameter");
-    let call = val::<Expr>("call");
-    let num = val::<Expr>("num");
-    let int = val::<Type>("int");
-    let type_ctx = val::<TypeContext>("type_ctx");
+    let function = Val::<Expr>::new("function");
+    let parameter = Val::<Expr>::new("parameter");
+    let call = Val::<Expr>::new("call");
+    let num = Val::<Expr>::new("num");
+    let int = Val::<Type>::new("int");
+    let type_ctx = Val::<TypeContext>::new("type_ctx");
 
     ctx.add(fact!(
         is_expr::FunctionParameter(function, parameter),

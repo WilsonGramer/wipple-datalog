@@ -17,10 +17,6 @@ pub struct Val<T> {
     _data: PhantomData<T>,
 }
 
-pub fn val<T>(description: &str) -> Val<T> {
-    Val::new(description)
-}
-
 impl<T> Val<T> {
     pub fn new(description: &str) -> Self {
         static NEXT: LazyLock<AtomicU32> = LazyLock::new(|| AtomicU32::new(0));

@@ -43,10 +43,10 @@ We can evaluate our rules on a few sample numbers:
 ```rust
 let mut ctx = Context::new();
 
-let one = val("1");
-let two = val("2");
-let three = val("3");
-let four = val("4");
+let one = Val::new("1");
+let two = Val::new("2");
+let three = Val::new("3");
+let four = Val::new("4");
 
 ctx.add(fact!(LessThan(one, two)));
 ctx.add(fact!(LessThan(two, three)));
