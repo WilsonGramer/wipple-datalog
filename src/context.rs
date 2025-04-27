@@ -75,6 +75,18 @@ impl<T> PartialEq for Val<T> {
 
 impl<T> Eq for Val<T> {}
 
+impl<T> PartialOrd for Val<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T> Ord for Val<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.counter.cmp(&other.counter)
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Context {
     facts: BTreeMap<TypeId, Vec<Fact<Erased>>>,
