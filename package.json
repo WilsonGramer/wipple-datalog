@@ -1,0 +1,11 @@
+{
+    "name": "wipple-datalog",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+        "chalk": "^5.4.1"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.2.11"
+    }
+}
