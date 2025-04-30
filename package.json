@@ -2,6 +2,7 @@
     "name": "wipple-datalog",
     "private": true,
     "type": "module",
+    "main": "src/index.ts",
     "dependencies": {
         "chalk": "^5.4.1"
     },
