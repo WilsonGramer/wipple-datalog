@@ -31,8 +31,6 @@ test("zip", () => {
     const a2 = new Val("a2");
     const a3 = new Val("a3");
 
-    ctx.add(nextElement(a1, a2));
-
     const bs = new Val("bs");
     const b1 = new Val("b1");
     const b2 = new Val("b2");
