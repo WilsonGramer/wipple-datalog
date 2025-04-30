@@ -3,22 +3,12 @@ import { fact, rule, Val, Context } from "../src/index.ts";
 
 class List {}
 class Element {}
-const inList = fact`${Element} is in list ${List}`;
 const firstElement = fact`${List}'s first element is ${Element}`;
 const nextElement = fact`after ${Element} is ${Element}`;
 const relatedLists = fact`the list ${List} is related to ${Element}`;
 const relatedElements = fact`the element ${Element} is related to ${Element}`;
 
 const rules = [
-    rule("first element in list", (xs) => {
-        const x = firstElement(xs);
-        return inList(x, xs);
-    }),
-    rule("next element in list", (x1) => {
-        const x2 = nextElement(x1);
-        const xs = inList(x1);
-        return inList(x2, xs);
-    }),
     rule("relate first elements", (xs) => {
         const x = firstElement(xs);
         const ys = relatedLists(xs);
