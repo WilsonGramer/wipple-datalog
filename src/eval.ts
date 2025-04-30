@@ -166,8 +166,8 @@ export class Context {
         }
     }
 
-    public print() {
-        for (const trace of this.all()) {
+    public print(query?: Query) {
+        for (const trace of query ? this.get(query) : this.all()) {
             console.log(trace.toString());
             console.log();
         }
